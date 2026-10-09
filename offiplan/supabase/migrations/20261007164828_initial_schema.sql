@@ -1,4 +1,4 @@
--- OffiPlan — schéma initial.
+-- Planiflow — schéma initial.
 --
 -- Principe de sécurité : l'accès aux données ne passe jamais par des requêtes directes du
 -- navigateur aux tables. La RLS est activée partout et ne reçoit aucune politique pour les
@@ -84,7 +84,7 @@ create table public.employees (
 
 create index employees_pharmacy_id_idx on public.employees (pharmacy_id);
 
--- ——— Accès à OffiPlan ———
+-- ——— Accès à Planiflow ———
 -- Chaque compte n'appartient qu'à une seule officine à la fois (contrainte unique sur
 -- user_id) ; chaque fiche d'équipe n'est reliée qu'à un seul compte (contrainte sur employee_id).
 

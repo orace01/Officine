@@ -136,7 +136,7 @@ export default function PlanningView({ weekStart }) {
               title={`${plural(errors.length, 'affectation impossible', 'affectations impossibles')}`}
               action={<button type="button" className="btn btn-primary btn-sm" onClick={repair} disabled={busy}><Wrench size={16} /> Corriger automatiquement</button>}
             >
-              Absence, repos, compétence ou double poste : OffiPlan peut retirer ces affectations et chercher un remplaçant disponible.
+              Absence, repos, compétence ou double poste : Planiflow peut retirer ces affectations et chercher un remplaçant disponible.
             </Callout>
           )}
 
@@ -274,7 +274,7 @@ export default function PlanningView({ weekStart }) {
       )}
       {dialog === 'regenerate' && (
         <ConfirmDialog title="Regénérer une proposition ?" confirmLabel="Regénérer" busy={busy} onConfirm={generate} onCancel={() => setDialog(null)}>
-          <p>OffiPlan repart des besoins, de l’équipe et des absences actuels pour proposer une nouvelle répartition.</p>
+          <p>Planiflow repart des besoins, de l’équipe et des absences actuels pour proposer une nouvelle répartition.</p>
           <p className="muted">
             {isDraft ? `Le brouillon v${data.draft.number} sera remplacé mais restera disponible dans l’historique.` : 'La version publiée reste visible par l’équipe jusqu’à la prochaine publication.'}
           </p>
@@ -341,7 +341,7 @@ function EmptyPlanning({ data, members, busy, onGenerate }) {
         title="Aucun planning pour cette semaine"
         actions={<button type="button" className="btn btn-primary btn-lg" onClick={onGenerate} disabled={busy || !ready}><Sparkles size={18} /> Générer une proposition</button>}
       >
-        <p>OffiPlan répartit l’équipe selon les besoins, les compétences, les repos et les absences validées. Vous pourrez tout ajuster avant de publier.</p>
+        <p>Planiflow répartit l’équipe selon les besoins, les compétences, les repos et les absences validées. Vous pourrez tout ajuster avant de publier.</p>
         <ul className="readiness">
           <li className={neededHours ? 'is-ok' : 'is-warning'}>
             {neededHours ? <CheckCircle2 size={18} aria-hidden="true" /> : <CircleAlert size={18} aria-hidden="true" />}

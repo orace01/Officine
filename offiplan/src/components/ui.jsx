@@ -7,9 +7,9 @@ const AVATAR_TONES = ['sage', 'blue', 'lilac', 'amber', 'coral', 'teal'];
 
 export function Brand({ to = '/' }) {
   return (
-    <Link to={to} className="brand" aria-label="OffiPlan, accueil">
-      <img src={`${import.meta.env.BASE_URL}offiplan-mark.svg`} alt="" width="32" height="32" />
-      <span className="brand-name">offi<span>plan</span></span>
+    <Link to={to} className="brand" aria-label="Planiflow, accueil">
+      <img src={`${import.meta.env.BASE_URL}planiflow-mark.svg`} alt="" width="32" height="32" />
+      <span className="brand-name">plani<span>flow</span></span>
     </Link>
   );
 }

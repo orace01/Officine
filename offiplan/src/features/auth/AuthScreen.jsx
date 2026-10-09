@@ -39,7 +39,7 @@ export default function AuthScreen() {
       <section className="welcome-intro">
         <Brand />
         <h1>Le planning de l’officine, étape par étape.</h1>
-        <p className="lead">Décrivez votre officine et votre équipe : OffiPlan propose le planning de la semaine, signale ce qui coince et le partage avec chacun.</p>
+        <p className="lead">Décrivez votre officine et votre équipe : Planiflow propose le planning de la semaine, signale ce qui coince et le partage avec chacun.</p>
         <ol className="welcome-steps">
           {STEPS.map((step, index) => (
             <li key={step.title}>

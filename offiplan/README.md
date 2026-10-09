@@ -1,6 +1,6 @@
-# OffiPlan — planification de l’équipe officinale
+# Planiflow — planification de l’équipe officinale
 
-Application web en français qui aide une officine à préparer le planning de la semaine : le titulaire décrit son officine et son équipe, OffiPlan propose une répartition, signale ce qui coince, puis le planning est publié pour que chaque collaborateur consulte ses créneaux et dépose ses demandes d’absence.
+Application web en français qui aide une officine à préparer le planning de la semaine : le titulaire décrit son officine et son équipe, Planiflow propose une répartition, signale ce qui coince, puis le planning est publié pour que chaque collaborateur consulte ses créneaux et dépose ses demandes d’absence.
 
 Cette version est un **frontend complet sans serveur** : une API locale (`src/services/localApi.js`) reproduit dans le navigateur les routes qu’exposerait un backend et enregistre les données dans le `localStorage` de ce navigateur. Les profils n’ont pas encore de mot de passe (connexion par nom et adresse courriel) : n’y saisissez pas d’informations confidentielles pour l’instant.
 
@@ -35,7 +35,7 @@ Chaque étape est enregistrée avant de passer à la suivante ; aucune ne peut �
 
 - **Accueil** : état de la semaine en cours et de la suivante, demandes à traiter, accès de l’équipe.
 - **Planning** : avancement en trois étapes (Proposer → Vérifier → Publier). Vue par poste ou par personne, modification d’un créneau en un clic, points à vérifier, heures planifiées, absences de la semaine, historique des versions. Les modifications sont enregistrées automatiquement dans un brouillon ; la version publiée reste visible par l’équipe jusqu’à la publication suivante. « Corriger automatiquement » retire les affectations devenues impossibles (absence, repos, compétence, doublon) et cherche des remplaçants.
-- **Équipe** : fiches, invitations (lien personnel à usage unique, rôle collaborateur ou gestionnaire, à transmettre vous-même puisque OffiPlan ne l’envoie pas), retrait d’accès, absences saisies directement.
+- **Équipe** : fiches, invitations (lien personnel à usage unique, rôle collaborateur ou gestionnaire, à transmettre vous-même puisque Planiflow ne l’envoie pas), retrait d’accès, absences saisies directement.
 - **Demandes** : acceptation ou refus (avec motif) des demandes d’absence, puis accès direct au planning concerné.
 - **Paramètres** : les mêmes écrans que la configuration guidée, et la réinitialisation des données de ce navigateur.
 

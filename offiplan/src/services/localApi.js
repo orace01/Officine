@@ -9,9 +9,9 @@ import {
 } from '../domain/defaults.js';
 import { daysBetween, isISODate, isTime, isWeekStart, timeToMinutes, toISODate, weekDates } from '../lib/dates.js';
 
-export const DATA_KEY = 'offiplan.data.v2';
-const SESSION_KEY = 'offiplan.session.v2';
-const LEGACY_KEYS = ['offiplan.simulation.v1', 'offiplan.simulation.user'];
+export const DATA_KEY = 'planiflow.data.v2';
+const SESSION_KEY = 'planiflow.session.v2';
+const LEGACY_KEYS = ['offiplan.data.v2', 'offiplan.simulation.v1', 'offiplan.simulation.user'];
 const INVITATION_DAYS = 14;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MANAGER_ROLES = ['owner', 'manager'];
@@ -620,7 +620,7 @@ route('POST', '/team/:id/invitation', (ctx) => {
   const { pharmacy, membership, user } = requireManager(ctx);
   const employee = findEmployee(ctx.data, pharmacy.id, ctx.params.id);
   if (employee.archived) fail(409, 'member_archived', 'Cette personne a été retirée de l’équipe.');
-  if (ctx.data.memberships.some((item) => item.employeeId === employee.id)) fail(409, 'member_linked', 'Cette personne a déjà accès à OffiPlan.');
+  if (ctx.data.memberships.some((item) => item.employeeId === employee.id)) fail(409, 'member_linked', 'Cette personne a déjà accès à Planiflow.');
   const role = ctx.body.role === 'manager' ? 'manager' : 'employee';
   if (role === 'manager' && membership.role !== 'owner') fail(403, 'owner_required', 'Seul le titulaire peut inviter un gestionnaire.');
   removeAccess(ctx, employee);

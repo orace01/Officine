@@ -45,7 +45,7 @@ function findRoute(routes, path) {
 
 function usePageTitle(title) {
   useEffect(() => {
-    document.title = title ? `${title} · OffiPlan` : 'OffiPlan — Planning officine';
+    document.title = title ? `${title} · Planiflow` : 'Planiflow — Planning officine';
   }, [title]);
 }
 
@@ -62,11 +62,11 @@ function Routes() {
   const found = workspace.membership ? findRoute(routes, path) : null;
   usePageTitle(join ? 'Invitation' : setup ? 'Configuration' : found?.route.title);
 
-  if (workspace.status === 'loading') return <div className="full-page"><Loader label="Ouverture d’OffiPlan…" /></div>;
+  if (workspace.status === 'loading') return <div className="full-page"><Loader label="Ouverture de Planiflow…" /></div>;
   if (workspace.status === 'error') {
     return (
       <div className="full-page">
-        <EmptyState icon={RotateCw} title="OffiPlan n’a pas pu démarrer" actions={<button type="button" className="btn btn-primary" onClick={workspace.refresh}>Réessayer</button>}>
+        <EmptyState icon={RotateCw} title="Planiflow n’a pas pu démarrer" actions={<button type="button" className="btn btn-primary" onClick={workspace.refresh}>Réessayer</button>}>
           <p>{workspace.error.message}</p>
         </EmptyState>
       </div>

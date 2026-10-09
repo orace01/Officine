@@ -109,7 +109,7 @@ export default function MemberView({ memberId }) {
         </Card>
 
         <div className="member-side">
-          <Card title="Accès à OffiPlan" actions={<Badge tone={ACCESS_LABELS[member.access.status].tone}>{ACCESS_LABELS[member.access.status].label}</Badge>}>
+          <Card title="Accès à Planiflow" actions={<Badge tone={ACCESS_LABELS[member.access.status].tone}>{ACCESS_LABELS[member.access.status].label}</Badge>}>
             {member.access.status === 'owner' && <p className="muted"><ShieldCheck size={16} aria-hidden="true" /> Titulaire de l’officine : accès complet.</p>}
             {member.access.status === 'linked' && (
               <p className="muted">
@@ -124,7 +124,7 @@ export default function MemberView({ memberId }) {
                   <button type="button" className="btn btn-primary btn-sm" onClick={() => copy(member.access.url)}><Copy size={16} /> Copier le lien</button>
                   <a className="btn btn-secondary btn-sm" href={member.access.url} target="_blank" rel="noreferrer"><ExternalLink size={16} /> Ouvrir</a>
                 </div>
-                <p className="muted small">Envoyez-le à {member.name.split(' ')[0]} par le moyen de votre choix (message, courriel…) : OffiPlan ne l’envoie pas automatiquement.</p>
+                <p className="muted small">Envoyez-le à {member.name.split(' ')[0]} par le moyen de votre choix (message, courriel…) : Planiflow ne l’envoie pas automatiquement.</p>
               </div>
             )}
             {member.access.status === 'none' && (
@@ -173,7 +173,7 @@ export default function MemberView({ memberId }) {
       )}
       {dialog === 'remove' && (
         <ConfirmDialog title={`Retirer ${member.name} de l’équipe ?`} confirmLabel="Retirer de l’équipe" tone="danger" busy={busy} onConfirm={remove} onCancel={() => setDialog(null)}>
-          <p>Ses affectations dans les brouillons en cours seront signalées comme à corriger. Son accès à OffiPlan est retiré.</p>
+          <p>Ses affectations dans les brouillons en cours seront signalées comme à corriger. Son accès à Planiflow est retiré.</p>
         </ConfirmDialog>
       )}
       {dialog === 'absence' && <RequestFormModal title={`Absence de ${member.name}`} onClose={() => setDialog(null)} onSubmit={createAbsence} managerEntry />}

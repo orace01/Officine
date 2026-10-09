@@ -76,7 +76,7 @@ export default function MemberForm({ member, activities, onSubmit, onCancel, sub
         checked={values.schedulable}
         onChange={(checked) => set('schedulable', checked)}
         label="Inclure dans les plannings"
-        description="Désactivez pour une personne qui ne tient aucun poste. Son accès à OffiPlan n’est pas modifié."
+        description="Désactivez pour une personne qui ne tient aucun poste. Son accès à Planiflow n’est pas modifié."
       />
 
       <FormError>{error}</FormError>

@@ -18,7 +18,7 @@ export default function TeamView() {
       <PageHeader
         eyebrow="Équipe"
         title="Les personnes de l’officine"
-        description="Leurs postes, leurs repos et leur accès à OffiPlan. Cliquez sur une personne pour modifier sa fiche ou l’inviter."
+        description="Leurs postes, leurs repos et leur accès à Planiflow. Cliquez sur une personne pour modifier sa fiche ou l’inviter."
         actions={<Link to="/equipe/nouveau" className="btn btn-primary"><UserPlus size={18} /> Ajouter une personne</Link>}
       />
       {!team.data ? <Loader /> : (
