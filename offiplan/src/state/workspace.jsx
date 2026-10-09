@@ -3,6 +3,14 @@ import { api, onExternalChange } from '../services/api.js';
 
 const WorkspaceContext = createContext(null);
 
+// Aucune identification n'est demandée : un profil générique est créé à la première visite dans
+// cet onglet (une adresse unique garantit un profil distinct par onglet) et reste modifiable
+// ensuite depuis sa fiche dans l'équipe.
+function guestProfile() {
+  const suffix = globalThis.crypto?.randomUUID?.().slice(0, 8) || Math.random().toString(36).slice(2, 10);
+  return { name: 'Profil', email: `profil-${suffix}@planiflow.local` };
+}
+
 // Charge le profil connecté et son officine. `revision` augmente à chaque rafraîchissement :
 // les pages s'en servent pour recharger leurs propres données après une modification.
 export function WorkspaceProvider({ children }) {
@@ -12,8 +20,8 @@ export function WorkspaceProvider({ children }) {
   const refresh = useCallback(async () => {
     try {
       const { user } = await api.session();
-      if (!user) setState({ status: 'anonymous' });
-      else setState({ status: 'ready', ...(await api.workspace()) });
+      if (!user) await api.login(guestProfile());
+      setState({ status: 'ready', ...(await api.workspace()) });
     } catch (error) {
       setState({ status: 'error', error });
     }

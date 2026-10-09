@@ -7,7 +7,6 @@ import { SETUP_STEPS } from './domain/defaults.js';
 import { isWeekStart, weekStartOf } from './lib/dates.js';
 import AppShell from './components/AppShell.jsx';
 import { EmptyState, Loader } from './components/ui.jsx';
-import AuthScreen from './features/auth/AuthScreen.jsx';
 import JoinView from './features/auth/JoinView.jsx';
 import Onboarding from './features/onboarding/Onboarding.jsx';
 import DashboardView from './features/dashboard/DashboardView.jsx';
@@ -73,7 +72,6 @@ function Routes() {
     );
   }
   if (join) return <JoinView key={join.token} token={join.token} />;
-  if (workspace.status === 'anonymous') return path === '/' ? <AuthScreen /> : <Redirect to="/" />;
 
   // Profil sans officine : il commence par créer la sienne.
   if (!workspace.membership) return setup?.step === 'officine' ? <Onboarding stepId="officine" /> : <Redirect to="/demarrage/officine" />;

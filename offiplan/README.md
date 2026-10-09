@@ -2,7 +2,7 @@
 
 Application web en français qui aide une officine à préparer le planning de la semaine : le titulaire décrit son officine et son équipe, Planiflow propose une répartition, signale ce qui coince, puis le planning est publié pour que chaque collaborateur consulte ses créneaux et dépose ses demandes d’absence.
 
-Cette version est un **frontend complet sans serveur** : une API locale (`src/services/localApi.js`) reproduit dans le navigateur les routes qu’exposerait un backend et enregistre les données dans le `localStorage` de ce navigateur. Les profils n’ont pas encore de mot de passe (connexion par nom et adresse courriel) : n’y saisissez pas d’informations confidentielles pour l’instant.
+Cette version est un **frontend complet sans serveur** : une API locale (`src/services/localApi.js`) reproduit dans le navigateur les routes qu’exposerait un backend et enregistre les données dans le `localStorage` de ce navigateur. Il n’y a pas d’identification : un profil générique est créé automatiquement à la première visite dans chaque onglet, sans mot de passe ni information confidentielle.
 
 ## Démarrer
 
@@ -15,7 +15,7 @@ pnpm test       # tests du moteur de planning et de l’API locale
 pnpm build      # version de production dans dist/
 ```
 
-À l’ouverture, on crée son espace avec un nom et une adresse courriel ; ressaisir les mêmes informations permet d’y revenir. Le premier profil créé devient titulaire et doit terminer la configuration guidée avant d’accéder à quoi que ce soit d’autre : impossible d’atteindre le tableau de bord, le planning ou l’équipe avec une officine à moitié configurée.
+À l’ouverture, un profil est créé automatiquement et sa première officine est à configurer tout de suite : aucune identification n’est demandée. Son nom (« Profil » par défaut) se change ensuite depuis sa fiche dans l’équipe. Le premier profil créé devient titulaire et doit terminer la configuration guidée avant d’accéder à quoi que ce soit d’autre : impossible d’atteindre le tableau de bord, le planning ou l’équipe avec une officine à moitié configurée.
 
 ## Parcours
 
@@ -82,4 +82,4 @@ Pour brancher un vrai serveur, il suffit de remplacer la fonction `request` de `
 - un profil appartient à une seule officine ;
 - pas de notifications externes, de pointage, de paie ni d’intégration RH ;
 - l’export PDF passe par l’impression du navigateur (format paysage) ;
-- il n’y a pas encore de mot de passe : toute personne connaissant le nom et l’adresse d’un profil peut s’y reconnecter. N’y saisissez pas d’informations confidentielles tant qu’une authentification réelle n’est pas en place.
+- il n’y a pas encore d’authentification : chaque onglet a son propre profil générique, sans mot de passe. N’y saisissez pas d’informations confidentielles tant qu’une authentification réelle n’est pas en place.
