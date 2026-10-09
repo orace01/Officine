@@ -1,0 +1,14 @@
+node_modules/
+.pnpm-store/
+dist/
+coverage/
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+
+# Supabase : artefacts locaux, jamais l'état réel du projet distant
+supabase/.branches
+supabase/.temp
+supabase/.env
