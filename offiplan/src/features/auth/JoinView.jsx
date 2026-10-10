@@ -1,5 +1,5 @@
 import { useId, useState } from 'react';
-import { ArrowRight, Link2Off, MailOpen } from 'lucide-react';
+import { ArrowRight, Link2Off, MailCheck, MailOpen } from 'lucide-react';
 import { api } from '../../services/api.js';
 import { Link, navigate } from '../../router.jsx';
 import { useResource, useWorkspace } from '../../state/workspace.jsx';
@@ -7,17 +7,21 @@ import { formatDate } from '../../lib/dates.js';
 import { ROLE_LABELS } from '../../lib/labels.js';
 import { Brand, Callout, EmptyState, Field, FormError, Loader } from '../../components/ui.jsx';
 
-// Page ouverte depuis un lien d'invitation : création du profil et rattachement à l'équipe.
+// Page ouverte depuis un lien d'invitation : création de compte (ou connexion) puis rattachement à l'équipe.
 export default function JoinView({ token }) {
   const workspace = useWorkspace();
   const invitation = useResource(() => api.invitation(token), [token]);
+  const [mode, setMode] = useState('signup');
   const [values, setValues] = useState(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const nameId = useId();
   const emailId = useId();
+  const passwordId = useId();
   const info = invitation.data;
-  const form = values || { name: info?.employeeName || '', email: '' };
+  const form = values || { name: info?.employeeName || '', email: '', password: '' };
+  const isSignup = mode === 'signup';
   const home = workspace.membership ? (workspace.isManager ? '/accueil' : '/mon-planning') : '/';
 
   async function join(event) {
@@ -25,7 +29,18 @@ export default function JoinView({ token }) {
     setBusy(true);
     setError('');
     try {
-      if (workspace.status === 'anonymous') await api.login(form);
+      if (workspace.status === 'anonymous') {
+        if (isSignup) {
+          const { needsConfirmation } = await api.signup(form);
+          if (needsConfirmation) {
+            setAwaitingConfirmation(true);
+            setBusy(false);
+            return;
+          }
+        } else {
+          await api.login(form);
+        }
+      }
       const result = await api.acceptInvitation(token);
       navigate(result.role === 'employee' ? '/mon-planning' : '/accueil', { replace: true, force: true });
       await workspace.refresh();
@@ -62,17 +77,33 @@ export default function JoinView({ token }) {
             Lien valable jusqu’au {formatDate(info.expiresAt.slice(0, 10))}.
           </p>
         </div>
-        {workspace.status === 'anonymous' && (
+        {workspace.status === 'anonymous' && awaitingConfirmation && (
+          <Callout tone="success" icon={MailCheck} title="Vérifiez votre boîte de réception">
+            Un courriel de confirmation a été envoyé à {form.email}. Cliquez sur le lien qu’il contient, puis revenez sur ce lien d’invitation pour rejoindre l’équipe.
+          </Callout>
+        )}
+        {workspace.status === 'anonymous' && !awaitingConfirmation && (
           <form onSubmit={join} className="form-stack-tight">
-            <Field id={nameId} label="Votre nom">
-              <input id={nameId} value={form.name} onChange={(event) => setValues({ ...form, name: event.target.value })} autoComplete="name" required minLength={2} />
-            </Field>
-            <Field id={emailId} label="Adresse courriel" hint="Ressaisissez les mêmes informations si vous avez déjà un profil sur cet appareil.">
+            {isSignup && (
+              <Field id={nameId} label="Votre nom">
+                <input id={nameId} value={form.name} onChange={(event) => setValues({ ...form, name: event.target.value })} autoComplete="name" required minLength={2} />
+              </Field>
+            )}
+            <Field id={emailId} label="Adresse courriel">
               <input id={emailId} type="email" value={form.email} onChange={(event) => setValues({ ...form, email: event.target.value })} autoComplete="email" required autoFocus />
             </Field>
+            <Field id={passwordId} label="Mot de passe">
+              <input
+                id={passwordId} type="password" value={form.password} onChange={(event) => setValues({ ...form, password: event.target.value })}
+                autoComplete={isSignup ? 'new-password' : 'current-password'} required minLength={6}
+              />
+            </Field>
             <FormError>{error}</FormError>
-            <button type="submit" className="btn btn-primary btn-lg btn-block" disabled={busy || form.name.trim().length < 2 || !form.email.trim()}>
+            <button type="submit" className="btn btn-primary btn-lg btn-block" disabled={busy || (isSignup && form.name.trim().length < 2) || !form.email.trim() || form.password.length < 6}>
               {busy ? 'Un instant…' : 'Rejoindre l’équipe'} {!busy && <ArrowRight size={18} />}
+            </button>
+            <button type="button" className="link-btn" onClick={() => { setMode(isSignup ? 'login' : 'signup'); setError(''); }}>
+              {isSignup ? 'Vous avez déjà un espace ? Se connecter' : 'Pas encore de compte ? Créer un espace'}
             </button>
           </form>
         )}

@@ -1,23 +1,63 @@
-// Client utilisé par l'interface. Il parle aujourd'hui à l'API de simulation locale ;
-// brancher un vrai serveur ne demandera de changer que la fonction `request`.
+// Client utilisé par l'interface : authentification via Supabase Auth, tout le reste (officine,
+// équipe, plannings…) via la fonction Edge `api`, qui revérifie elle-même l'identité et le rôle
+// de la personne (voir `supabase/functions/api/index.ts`).
 
-import { createLocalApi, DATA_KEY } from './localApi.js';
+import { supabase } from './supabaseClient.js';
 
-const request = createLocalApi();
+const FUNCTIONS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api`;
+
+// Les messages de Supabase Auth ne sont pas traduits ; on reprend ceux qui peuvent apparaître
+// dans les formulaires de connexion/création de compte pour rester cohérent avec le reste de l'interface.
+const AUTH_MESSAGES = {
+  'Invalid login credentials': 'Adresse courriel ou mot de passe incorrect.',
+  'User already registered': 'Un compte existe déjà avec cette adresse courriel.',
+  'Password should be at least 6 characters.': 'Le mot de passe doit contenir au moins 6 caractères.',
+  'Email not confirmed': 'Cette adresse courriel n’a pas encore été confirmée.',
+};
+
+function translateAuthError(error) {
+  return new Error(AUTH_MESSAGES[error.message] || error.message);
+}
+
+async function authedFetch(method, path, body) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const response = await fetch(`${FUNCTIONS_URL}${path}`, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
+    },
+    body: ['GET', 'DELETE'].includes(method) ? undefined : JSON.stringify(body || {}),
+  });
+  const text = await response.text();
+  const payload = text ? JSON.parse(text) : null;
+  if (!response.ok) throw new Error(payload?.message || `Une erreur est survenue (${response.status}).`);
+  return payload;
+}
 
 const id = (value) => encodeURIComponent(value);
-const get = (path) => request('GET', path);
-const post = (path, body) => request('POST', path, body);
-const put = (path, body) => request('PUT', path, body);
-const patch = (path, body) => request('PATCH', path, body);
-const remove = (path) => request('DELETE', path);
+const get = (path) => authedFetch('GET', path);
+const post = (path, body) => authedFetch('POST', path, body);
+const put = (path, body) => authedFetch('PUT', path, body);
+const patch = (path, body) => authedFetch('PATCH', path, body);
+const remove = (path) => authedFetch('DELETE', path);
 const planPath = (weekStart) => `/plans/${id(weekStart)}`;
 
 export const api = {
-  session: () => get('/auth/session'),
-  login: (profile) => post('/auth/login', profile),
-  logout: () => post('/auth/logout'),
-  resetData: () => post('/account/reset'),
+  session: async () => {
+    const { data } = await supabase.auth.getSession();
+    return { user: data.session ? { id: data.session.user.id } : null };
+  },
+  signup: async ({ name, email, password }) => {
+    const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { name } } });
+    if (error) throw translateAuthError(error);
+    return { needsConfirmation: !data.session };
+  },
+  login: async ({ email, password }) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw translateAuthError(error);
+  },
+  logout: () => supabase.auth.signOut(),
 
   workspace: () => get('/workspace'),
   createPharmacy: (values) => post('/pharmacy', values),
@@ -56,11 +96,9 @@ export const api = {
   mySchedule: (weekStart) => get(`/my/schedule/${id(weekStart)}`),
 };
 
-// Prévient l'interface quand un autre onglet modifie les données de simulation.
+// Prévient l'interface quand la session change (connexion, déconnexion, rafraîchissement de
+// jeton dans un autre onglet du même navigateur).
 export function onExternalChange(callback) {
-  const listener = (event) => {
-    if (event.key === null || event.key === DATA_KEY) callback();
-  };
-  window.addEventListener('storage', listener);
-  return () => window.removeEventListener('storage', listener);
+  const { data: subscription } = supabase.auth.onAuthStateChange(() => callback());
+  return () => subscription.subscription.unsubscribe();
 }

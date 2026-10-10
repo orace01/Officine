@@ -2,20 +2,25 @@
 
 Application web en français qui aide une officine à préparer le planning de la semaine : le titulaire décrit son officine et son équipe, Planiflow propose une répartition, signale ce qui coince, puis le planning est publié pour que chaque collaborateur consulte ses créneaux et dépose ses demandes d’absence.
 
-Cette version est un **frontend complet sans serveur** : une API locale (`src/services/localApi.js`) reproduit dans le navigateur les routes qu’exposerait un backend et enregistre les données dans le `localStorage` de ce navigateur. Les profils n’ont pas encore de mot de passe (connexion par nom et adresse courriel) : n’y saisissez pas d’informations confidentielles pour l’instant.
+Le backend est [Supabase](https://supabase.com) : Postgres pour les données, Supabase Auth pour l’authentification (e-mail + mot de passe), et une fonction Edge (`supabase/functions/api/`) qui expose les routes métier. La RLS est activée sur toutes les tables sans aucune politique pour `anon`/`authenticated` : le navigateur ne lit ni n’écrit jamais Postgres directement, tout passe par la fonction Edge, qui revérifie elle-même l’identité et le rôle de la personne à chaque appel.
 
 ## Démarrer
 
-Prérequis : Node 20.19 ou plus récent, et pnpm (ou npm).
+Prérequis : Node 20.19 ou plus récent, pnpm (ou npm), Docker (pour la stack Supabase locale) et la [CLI Supabase](https://supabase.com/docs/guides/local-development/cli/getting-started).
 
 ```sh
 pnpm install --frozen-lockfile
-pnpm dev        # http://localhost:3000
-pnpm test       # tests du moteur de planning et de l’API locale
-pnpm build      # version de production dans dist/
+pnpm supabase:start      # démarre Postgres et Auth en local (Docker), applique les migrations
+pnpm supabase:functions  # sert la fonction Edge en local, avec rechargement à chaud — à garder ouvert
+cp .env.example .env.local   # les valeurs par défaut fonctionnent avec la stack locale telle quelle
+pnpm dev                 # http://localhost:3000, dans un autre terminal
+pnpm test                # tests du moteur de planning
+pnpm build               # version de production dans dist/
 ```
 
-À l’ouverture, on crée son espace avec un nom et une adresse courriel ; ressaisir les mêmes informations permet d’y revenir. Le premier profil créé devient titulaire et doit terminer la configuration guidée avant d’accéder à quoi que ce soit d’autre : impossible d’atteindre le tableau de bord, le planning ou l’équipe avec une officine à moitié configurée.
+`pnpm supabase:start` affiche l’URL et les clés de la stack locale ; `pnpm supabase:stop` l’arrête. Avec un projet Supabase hébergé, les mêmes variables (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) se trouvent dans Project Settings → API, et la fonction Edge se déploie avec `supabase functions deploy api` (plus besoin de `supabase:functions`, qui ne sert qu’en local).
+
+À l’ouverture, on crée son espace avec une adresse courriel et un mot de passe. Le premier profil créé devient titulaire et doit terminer la configuration guidée avant d’accéder à quoi que ce soit d’autre : impossible d’atteindre le tableau de bord, le planning ou l’équipe avec une officine à moitié configurée.
 
 ## Parcours
 
@@ -37,13 +42,13 @@ Chaque étape est enregistrée avant de passer à la suivante ; aucune ne peut �
 - **Planning** : avancement en trois étapes (Proposer → Vérifier → Publier). Vue par poste ou par personne, modification d’un créneau en un clic, points à vérifier, heures planifiées, absences de la semaine, historique des versions. Les modifications sont enregistrées automatiquement dans un brouillon ; la version publiée reste visible par l’équipe jusqu’à la publication suivante. « Corriger automatiquement » retire les affectations devenues impossibles (absence, repos, compétence, doublon) et cherche des remplaçants.
 - **Équipe** : fiches, invitations (lien personnel à usage unique, rôle collaborateur ou gestionnaire, à transmettre vous-même puisque Planiflow ne l’envoie pas), retrait d’accès, absences saisies directement.
 - **Demandes** : acceptation ou refus (avec motif) des demandes d’absence, puis accès direct au planning concerné.
-- **Paramètres** : les mêmes écrans que la configuration guidée, et la réinitialisation des données de ce navigateur.
+- **Paramètres** : les mêmes écrans que la configuration guidée.
 
 ### Collaborateur
 
-Il rejoint l’équipe par le lien d’invitation que le titulaire lui transmet, consulte son planning publié semaine par semaine et dépose ses demandes (congé, indisponibilité, formation).
+Il rejoint l’équipe par le lien d’invitation que le titulaire lui transmet (création de compte ou connexion, puis rattachement automatique), consulte son planning publié semaine par semaine et dépose ses demandes (congé, indisponibilité, formation).
 
-Pour tester les deux côtés depuis un seul poste, ouvrez le lien d’invitation dans un nouvel onglet : les données sont partagées entre onglets, mais chaque onglet garde sa propre connexion.
+Pour tester les deux côtés depuis un seul poste, ouvrez le lien d’invitation dans un nouvel onglet avec un autre compte : chaque onglet garde sa propre session Supabase.
 
 ## Règles du générateur
 
@@ -61,20 +66,25 @@ La proposition reste un brouillon : elle se relit et s’ajuste avant publicatio
 src/
 ├── App.jsx                  routage selon le rôle et l’avancement de la configuration
 ├── router.jsx               routeur par fragment d’URL (#/planning/2026-10-12)
-├── domain/                  règles métier, sans dépendance à l’interface
+├── domain/                  règles métier, sans dépendance à l’interface ni à Postgres
 │   ├── schedule.js          génération, vérifications, correction, calcul des heures
+│   ├── validation.js        règles de validation, partagées avec la fonction Edge
 │   └── defaults.js          valeurs de départ (créneaux, postes, étapes)
 ├── services/
-│   ├── api.js               client utilisé par l’interface
-│   └── localApi.js          API locale (routes, validations, stockage), à remplacer par un vrai serveur
+│   ├── api.js               client utilisé par l’interface (Supabase Auth + fonction Edge)
+│   └── supabaseClient.js    client Supabase unique (authentification)
 ├── state/                   profil connecté, notifications, requêtes média
 ├── lib/                     dates et libellés
 ├── components/              éléments partagés (fenêtres, champs, mise en page…)
 ├── features/                une page ou un parcours par dossier
 └── styles/                  base.css, components.css, layout.css, app.css
+
+supabase/
+├── migrations/              schéma Postgres (tables, types, RLS)
+└── functions/api/           fonction Edge : toutes les routes métier
 ```
 
-Pour brancher un vrai serveur, il suffit de remplacer la fonction `request` de `src/services/api.js` par des appels HTTP vers les mêmes routes (`GET /plans/:semaine`, `POST /plans/:semaine/generate`, `PUT /team/:id`…), décrites et validées dans `localApi.js`.
+`src/domain/schedule.js` et `src/domain/validation.js` sont importés tels quels par la fonction Edge (`supabase/functions/api/index.ts`) : le moteur de planning et les règles de validation ne sont écrits qu’une fois, côté frontend comme côté serveur.
 
 ## Hypothèses et limites
 
@@ -82,4 +92,4 @@ Pour brancher un vrai serveur, il suffit de remplacer la fonction `request` de `
 - un profil appartient à une seule officine ;
 - pas de notifications externes, de pointage, de paie ni d’intégration RH ;
 - l’export PDF passe par l’impression du navigateur (format paysage) ;
-- il n’y a pas encore de mot de passe : toute personne connaissant le nom et l’adresse d’un profil peut s’y reconnecter. N’y saisissez pas d’informations confidentielles tant qu’une authentification réelle n’est pas en place.
+- la confirmation par courriel à l’inscription dépend de la configuration Supabase Auth du projet (désactivée par défaut en local).

@@ -1,12 +1,10 @@
-import { useState } from 'react';
-import { ArrowRight, Building2, CalendarClock, ClipboardList, RotateCcw, Users } from 'lucide-react';
+import { ArrowRight, Building2, CalendarClock, ClipboardList, Users } from 'lucide-react';
 import { api } from '../../services/api.js';
-import { Link, Redirect, navigate } from '../../router.jsx';
+import { Link, Redirect } from '../../router.jsx';
 import { useResource, useWorkspace } from '../../state/workspace.jsx';
-import { useAction, useToast } from '../../state/toasts.jsx';
+import { useToast } from '../../state/toasts.jsx';
 import { totalNeededHours } from '../../domain/schedule.js';
 import { WEEKDAYS_SHORT, formatHours } from '../../lib/dates.js';
-import { ConfirmDialog } from '../../components/Modal.jsx';
 import { ActivityTag, PageHeader, SlotList } from '../../components/ui.jsx';
 import PharmacyForm from './PharmacyForm.jsx';
 import OpeningForm from './OpeningForm.jsx';
@@ -54,23 +52,10 @@ export default function SettingsView({ section }) {
 
 function SettingsHub() {
   const workspace = useWorkspace();
-  const notify = useToast();
-  const [run, busy] = useAction();
-  const [confirmReset, setConfirmReset] = useState(false);
   const needs = useResource(() => api.needs(), [workspace.revision]);
   const { pharmacy, activeActivities } = workspace;
   const layout = pharmacy.settings;
   const neededHours = needs.data ? totalNeededHours(needs.data.needs, layout) : null;
-
-  async function reset() {
-    const result = await run(() => api.resetData());
-    if (result.ok) {
-      setConfirmReset(false);
-      navigate('/', { force: true });
-      await workspace.refresh();
-      notify({ title: 'Données réinitialisées', message: 'Toutes les données de ce navigateur ont été effacées.' });
-    }
-  }
 
   const cards = [
     { id: 'officine', icon: Building2, content: <><strong>{pharmacy.name}</strong><span>{pharmacy.city || 'Ville non renseignée'}</span></> },
@@ -99,19 +84,6 @@ function SettingsHub() {
           </Link>
         ))}
       </div>
-
-      <section className="card danger-zone">
-        <div>
-          <h2>Données de ce navigateur</h2>
-          <p className="muted">L’officine, l’équipe et les plannings sont enregistrés uniquement ici. Réinitialiser efface tout, pour tous les profils connectés depuis ce navigateur.</p>
-        </div>
-        <button type="button" className="btn btn-danger-outline" onClick={() => setConfirmReset(true)}><RotateCcw size={17} /> Réinitialiser les données</button>
-      </section>
-      {confirmReset && (
-        <ConfirmDialog title="Effacer toutes les données ?" confirmLabel="Tout effacer" tone="danger" busy={busy} onConfirm={reset} onCancel={() => setConfirmReset(false)}>
-          <p>Les profils, l’officine, l’équipe, les demandes et tous les plannings enregistrés dans ce navigateur seront supprimés. Cette action est définitive.</p>
-        </ConfirmDialog>
-      )}
     </>
   );
 }
