@@ -7,11 +7,9 @@ import { supabase } from './supabaseClient.js';
 const FUNCTIONS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api`;
 
 // Les messages de Supabase Auth ne sont pas traduits ; on reprend ceux qui peuvent apparaître
-// dans les formulaires de connexion/création de compte pour rester cohérent avec le reste de l'interface.
+// dans le formulaire de connexion pour rester cohérent avec le reste de l'interface.
 const AUTH_MESSAGES = {
   'Invalid login credentials': 'Adresse courriel ou mot de passe incorrect.',
-  'User already registered': 'Un compte existe déjà avec cette adresse courriel.',
-  'Password should be at least 6 characters.': 'Le mot de passe doit contenir au moins 6 caractères.',
   'Email not confirmed': 'Cette adresse courriel n’a pas encore été confirmée.',
 };
 
@@ -47,11 +45,6 @@ export const api = {
   session: async () => {
     const { data } = await supabase.auth.getSession();
     return { user: data.session ? { id: data.session.user.id } : null };
-  },
-  signup: async ({ name, email, password }) => {
-    const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { name } } });
-    if (error) throw translateAuthError(error);
-    return { needsConfirmation: !data.session };
   },
   login: async ({ email, password }) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });

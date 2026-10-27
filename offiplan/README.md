@@ -20,7 +20,14 @@ pnpm build               # version de production dans dist/
 
 `pnpm supabase:start` affiche l’URL et les clés de la stack locale ; `pnpm supabase:stop` l’arrête. Avec un projet Supabase hébergé, les mêmes variables (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) se trouvent dans Project Settings → API, et la fonction Edge se déploie avec `supabase functions deploy api` (plus besoin de `supabase:functions`, qui ne sert qu’en local).
 
-À l’ouverture, on crée son espace avec une adresse courriel et un mot de passe. Le premier profil créé devient titulaire et doit terminer la configuration guidée avant d’accéder à quoi que ce soit d’autre : impossible d’atteindre le tableau de bord, le planning ou l’équipe avec une officine à moitié configurée.
+Pour cette première version, la création de compte est désactivée (`enable_signup = false`) : une seule personne doit pouvoir se connecter. Son compte se crée une fois avec :
+
+```sh
+SUPABASE_URL=http://127.0.0.1:54321 SUPABASE_SERVICE_ROLE_KEY=... \
+  node scripts/create-admin.mjs titulaire@officine.fr "Camille Martin"
+```
+
+(`SUPABASE_SERVICE_ROLE_KEY` est affichée par `pnpm supabase:start` ; pour un projet hébergé, elle vient de Project Settings → API — ne jamais la mettre dans le frontend ni la commiter.) Le mot de passe généré n’est affiché qu’une fois : à noter immédiatement. Ce profil devient titulaire et doit terminer la configuration guidée avant d’accéder à quoi que ce soit d’autre : impossible d’atteindre le tableau de bord, le planning ou l’équipe avec une officine à moitié configurée.
 
 ## Parcours
 
@@ -46,9 +53,7 @@ Chaque étape est enregistrée avant de passer à la suivante ; aucune ne peut �
 
 ### Collaborateur
 
-Il rejoint l’équipe par le lien d’invitation que le titulaire lui transmet (création de compte ou connexion, puis rattachement automatique), consulte son planning publié semaine par semaine et dépose ses demandes (congé, indisponibilité, formation).
-
-Pour tester les deux côtés depuis un seul poste, ouvrez le lien d’invitation dans un nouvel onglet avec un autre compte : chaque onglet garde sa propre session Supabase.
+*Pas encore utilisable dans cette première version (voir plus haut : un seul compte existe) ; décrit ici pour la suite.* Il rejoint l’équipe par le lien d’invitation que le titulaire lui transmet (connexion avec un compte créé pour lui via `scripts/create-admin.mjs`, puis rattachement automatique), consulte son planning publié semaine par semaine et dépose ses demandes (congé, indisponibilité, formation).
 
 ## Règles du générateur
 
@@ -88,8 +93,8 @@ supabase/
 
 ## Hypothèses et limites
 
+- **première version : un seul compte** — la création de compte est désactivée (`enable_signup = false` dans `supabase/config.toml`) ; inviter un collaborateur crée bien le lien, mais personne ne peut encore s’y connecter tant que son compte n’est pas créé à la main avec `scripts/create-admin.mjs` ;
 - une semaine va du lundi au dimanche ; les jours fermés ne sont pas planifiés ;
 - un profil appartient à une seule officine ;
 - pas de notifications externes, de pointage, de paie ni d’intégration RH ;
-- l’export PDF passe par l’impression du navigateur (format paysage) ;
-- la confirmation par courriel à l’inscription dépend de la configuration Supabase Auth du projet (désactivée par défaut en local).
+- l’export PDF passe par l’impression du navigateur (format paysage).

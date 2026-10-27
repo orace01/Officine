@@ -1,9 +1,9 @@
 import { useId, useState } from 'react';
-import { ArrowRight, MailCheck, ShieldCheck } from 'lucide-react';
+import { ArrowRight, ShieldCheck } from 'lucide-react';
 import { api } from '../../services/api.js';
 import { navigate } from '../../router.jsx';
 import { useWorkspace } from '../../state/workspace.jsx';
-import { Brand, Callout, Field, FormError } from '../../components/ui.jsx';
+import { Brand, Field, FormError } from '../../components/ui.jsx';
 
 const STEPS = [
   { title: 'Configurez', text: 'Jours d’ouverture, créneaux, postes à tenir et besoins de chaque journée.' },
@@ -11,39 +11,22 @@ const STEPS = [
   { title: 'Publiez', text: 'Chacun consulte son planning et dépose ses demandes d’absence.' },
 ];
 
-// Écran d'entrée : création de compte (e-mail + mot de passe) ou connexion.
+// Écran d'entrée : connexion uniquement. Pour cette première version, un seul compte existe
+// (créé avec `scripts/create-admin.mjs`) ; la création de compte est désactivée côté Supabase Auth.
 export default function AuthScreen() {
   const workspace = useWorkspace();
-  const [mode, setMode] = useState('signup');
-  const [values, setValues] = useState({ name: '', email: '', password: '' });
+  const [values, setValues] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
-  const nameId = useId();
   const emailId = useId();
   const passwordId = useId();
-  const isSignup = mode === 'signup';
-
-  function switchMode(next) {
-    setMode(next);
-    setError('');
-  }
 
   async function submit(event) {
     event.preventDefault();
     setBusy(true);
     setError('');
     try {
-      if (isSignup) {
-        const { needsConfirmation } = await api.signup(values);
-        if (needsConfirmation) {
-          setAwaitingConfirmation(true);
-          setBusy(false);
-          return;
-        }
-      } else {
-        await api.login(values);
-      }
+      await api.login(values);
       navigate('/', { replace: true, force: true });
       await workspace.refresh();
     } catch (failure) {
@@ -69,41 +52,22 @@ export default function AuthScreen() {
       </section>
 
       <main className="welcome-panel" id="contenu">
-        {awaitingConfirmation ? (
-          <Callout tone="success" icon={MailCheck} title="Vérifiez votre boîte de réception">
-            Un courriel de confirmation a été envoyé à {values.email}. Cliquez sur le lien qu’il contient pour activer votre espace.
-          </Callout>
-        ) : (
-          <section className="card">
-            <h2 className="card-title">{isSignup ? 'Créer votre espace' : 'Se connecter'}</h2>
-            <p className="muted">
-              {isSignup ? 'La configuration de votre officine suit tout de suite après.' : 'Retrouvez votre officine et votre équipe.'}
-            </p>
-            <form onSubmit={submit} className="form-stack-tight">
-              {isSignup && (
-                <Field id={nameId} label="Votre nom">
-                  <input id={nameId} value={values.name} onChange={(event) => setValues({ ...values, name: event.target.value })} placeholder="Ex. Camille Martin" autoComplete="name" required minLength={2} maxLength={120} autoFocus />
-                </Field>
-              )}
-              <Field id={emailId} label="Adresse courriel">
-                <input id={emailId} type="email" value={values.email} onChange={(event) => setValues({ ...values, email: event.target.value })} placeholder="camille@officine.fr" autoComplete="email" required autoFocus={!isSignup} />
-              </Field>
-              <Field id={passwordId} label="Mot de passe">
-                <input
-                  id={passwordId} type="password" value={values.password} onChange={(event) => setValues({ ...values, password: event.target.value })}
-                  autoComplete={isSignup ? 'new-password' : 'current-password'} required minLength={6}
-                />
-              </Field>
-              <FormError>{error}</FormError>
-              <button type="submit" className="btn btn-primary btn-lg btn-block" disabled={busy || (isSignup && values.name.trim().length < 2) || !values.email.trim() || values.password.length < 6}>
-                {busy ? 'Un instant…' : isSignup ? 'Créer mon espace' : 'Se connecter'} {!busy && <ArrowRight size={18} />}
-              </button>
-            </form>
-            <button type="button" className="link-btn" onClick={() => switchMode(isSignup ? 'login' : 'signup')}>
-              {isSignup ? 'Vous avez déjà un espace ? Se connecter' : 'Pas encore de compte ? Créer un espace'}
+        <section className="card">
+          <h2 className="card-title">Se connecter</h2>
+          <p className="muted">Retrouvez votre officine et votre équipe.</p>
+          <form onSubmit={submit} className="form-stack-tight">
+            <Field id={emailId} label="Adresse courriel">
+              <input id={emailId} type="email" value={values.email} onChange={(event) => setValues({ ...values, email: event.target.value })} placeholder="camille@officine.fr" autoComplete="email" required autoFocus />
+            </Field>
+            <Field id={passwordId} label="Mot de passe">
+              <input id={passwordId} type="password" value={values.password} onChange={(event) => setValues({ ...values, password: event.target.value })} autoComplete="current-password" required minLength={6} />
+            </Field>
+            <FormError>{error}</FormError>
+            <button type="submit" className="btn btn-primary btn-lg btn-block" disabled={busy || !values.email.trim() || values.password.length < 6}>
+              {busy ? 'Un instant…' : 'Se connecter'} {!busy && <ArrowRight size={18} />}
             </button>
-          </section>
-        )}
+          </form>
+        </section>
 
         <p className="welcome-note"><ShieldCheck size={15} aria-hidden="true" /> Vos données sont protégées par un mot de passe.</p>
       </main>
