@@ -1,31 +1,28 @@
-import { useId, useState } from 'react';
+import { useState } from 'react';
 import { ArrowRight, Link2Off, MailOpen } from 'lucide-react';
 import { api } from '../../services/api.js';
 import { Link, navigate } from '../../router.jsx';
 import { useResource, useWorkspace } from '../../state/workspace.jsx';
 import { formatDate } from '../../lib/dates.js';
 import { ROLE_LABELS } from '../../lib/labels.js';
-import { Brand, Callout, EmptyState, Field, FormError, Loader } from '../../components/ui.jsx';
+import { Brand, Callout, EmptyState, FormError, Loader } from '../../components/ui.jsx';
 
-// Page ouverte depuis un lien d'invitation : connexion (un seul compte existe pour cette première
-// version, voir AuthScreen.jsx) puis rattachement à l'équipe.
+// Page ouverte depuis un lien d'invitation : aucune information à saisir, le jeton du lien suffit.
+// Une session anonyme s'ouvre au moment d'accepter (voir api.joinAnonymously) et rattache le
+// profil à l'équipe ; rien d'autre n'identifie la personne.
 export default function JoinView({ token }) {
   const workspace = useWorkspace();
   const invitation = useResource(() => api.invitation(token), [token]);
-  const [values, setValues] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const emailId = useId();
-  const passwordId = useId();
   const info = invitation.data;
   const home = workspace.membership ? (workspace.isManager ? '/accueil' : '/mon-planning') : '/';
 
-  async function join(event) {
-    event?.preventDefault();
+  async function join() {
     setBusy(true);
     setError('');
     try {
-      if (workspace.status === 'anonymous') await api.login(values);
+      if (workspace.status === 'anonymous') await api.joinAnonymously();
       const result = await api.acceptInvitation(token);
       navigate(result.role === 'employee' ? '/mon-planning' : '/accueil', { replace: true, force: true });
       await workspace.refresh();
@@ -62,26 +59,12 @@ export default function JoinView({ token }) {
             Lien valable jusqu’au {formatDate(info.expiresAt.slice(0, 10))}.
           </p>
         </div>
-        {workspace.status === 'anonymous' && (
-          <form onSubmit={join} className="form-stack-tight">
-            <Field id={emailId} label="Adresse courriel">
-              <input id={emailId} type="email" value={values.email} onChange={(event) => setValues({ ...values, email: event.target.value })} autoComplete="email" required autoFocus />
-            </Field>
-            <Field id={passwordId} label="Mot de passe">
-              <input id={passwordId} type="password" value={values.password} onChange={(event) => setValues({ ...values, password: event.target.value })} autoComplete="current-password" required minLength={6} />
-            </Field>
+        {!workspace.membership && (
+          <div className="form-stack-tight">
             <FormError>{error}</FormError>
-            <button type="submit" className="btn btn-primary btn-lg btn-block" disabled={busy || !values.email.trim() || values.password.length < 6}>
+            <button type="button" className="btn btn-primary btn-lg btn-block" onClick={join} disabled={busy}>
               {busy ? 'Un instant…' : 'Rejoindre l’équipe'} {!busy && <ArrowRight size={18} />}
             </button>
-          </form>
-        )}
-        {workspace.status === 'ready' && !workspace.membership && (
-          <div className="form-stack-tight">
-            <p>Vous êtes connecté·e en tant que <strong>{workspace.user.name}</strong>.</p>
-            <FormError>{error}</FormError>
-            <button type="button" className="btn btn-primary btn-lg btn-block" onClick={() => join()} disabled={busy}>Rejoindre l’équipe <ArrowRight size={18} /></button>
-            <button type="button" className="btn btn-ghost btn-block" onClick={logout}>Se déconnecter</button>
           </div>
         )}
         {workspace.status === 'ready' && workspace.membership && (

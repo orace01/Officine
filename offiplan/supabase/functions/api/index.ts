@@ -271,6 +271,13 @@ function matchRoute(method, path) {
   return null;
 }
 
+// Publique, sans authentification : dit à l'écran d'accueil s'il doit encore proposer
+// « Créer votre espace » (aucune officine) ou seulement « Se connecter » (déjà prise).
+route('GET', '/bootstrap', async () => {
+  const { count } = await admin.from('pharmacies').select('id', { count: 'exact', head: true });
+  return { claimed: (count || 0) > 0 };
+});
+
 route('GET', '/workspace', async (ctx) => {
   const user = await requireUser(ctx.req);
   const { data: membership } = await admin.from('memberships').select('*').eq('user_id', user.id).maybeSingle();
@@ -298,6 +305,10 @@ route('POST', '/pharmacy', async (ctx) => {
   const user = await requireUser(ctx.req);
   const { data: existing } = await admin.from('memberships').select('id').eq('user_id', user.id).maybeSingle();
   if (existing) fail(409, 'membership_exists', 'Ce profil est déjà rattaché à une officine.');
+  // Une seule officine pour cette première version : empêche un compte créé en dehors de
+  // l'application (API Auth appelée directement) de démarrer la sienne.
+  const { count } = await admin.from('pharmacies').select('id', { count: 'exact', head: true });
+  if (count > 0) fail(403, 'single_pharmacy_only', 'Une seule officine est autorisée pour cette version de Planiflow.');
   const values = validatePharmacy(ctx.body);
   const slots = DEFAULT_SLOTS.map((slot) => ({ id: makeId('slot'), ...slot }));
   const { data: pharmacyRow, error } = await admin.from('pharmacies').insert({

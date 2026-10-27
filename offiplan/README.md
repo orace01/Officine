@@ -20,14 +20,16 @@ pnpm build               # version de production dans dist/
 
 `pnpm supabase:start` affiche l’URL et les clés de la stack locale ; `pnpm supabase:stop` l’arrête. Avec un projet Supabase hébergé, les mêmes variables (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) se trouvent dans Project Settings → API, et la fonction Edge se déploie avec `supabase functions deploy api` (plus besoin de `supabase:functions`, qui ne sert qu’en local).
 
-Pour cette première version, la création de compte est désactivée (`enable_signup = false`) : une seule personne doit pouvoir se connecter. Son compte se crée une fois avec :
+À l’ouverture, tant qu’aucune officine n’existe, l’écran d’accueil propose « Créer votre espace » (e-mail + mot de passe au choix de la personne). La première personne qui passe par là devient titulaire — ensuite la fonction Edge refuse toute deuxième officine, quel que soit le compte qui la demande (`POST /pharmacy`), et l’écran ne propose plus que « Se connecter ». Rien à configurer à l’avance : il suffit que la bonne personne ouvre l’app en premier.
+
+`scripts/create-admin.mjs` reste disponible pour créer un compte directement via l’API d’administration (dépannage, scripts de test) :
 
 ```sh
 SUPABASE_URL=http://127.0.0.1:54321 SUPABASE_SERVICE_ROLE_KEY=... \
-  node scripts/create-admin.mjs titulaire@officine.fr "Camille Martin"
+  node scripts/create-admin.mjs quelqu.un@officine.fr "Nom complet"
 ```
 
-(`SUPABASE_SERVICE_ROLE_KEY` est affichée par `pnpm supabase:start` ; pour un projet hébergé, elle vient de Project Settings → API — ne jamais la mettre dans le frontend ni la commiter.) Le mot de passe généré n’est affiché qu’une fois : à noter immédiatement. Ce profil devient titulaire et doit terminer la configuration guidée avant d’accéder à quoi que ce soit d’autre : impossible d’atteindre le tableau de bord, le planning ou l’équipe avec une officine à moitié configurée.
+(`SUPABASE_SERVICE_ROLE_KEY` est affichée par `pnpm supabase:start` ; pour un projet hébergé, elle vient de Project Settings → API — ne jamais la mettre dans le frontend ni la commiter.)
 
 ## Parcours
 
@@ -53,7 +55,9 @@ Chaque étape est enregistrée avant de passer à la suivante ; aucune ne peut �
 
 ### Collaborateur
 
-*Pas encore utilisable dans cette première version (voir plus haut : un seul compte existe) ; décrit ici pour la suite.* Il rejoint l’équipe par le lien d’invitation que le titulaire lui transmet (connexion avec un compte créé pour lui via `scripts/create-admin.mjs`, puis rattachement automatique), consulte son planning publié semaine par semaine et dépose ses demandes (congé, indisponibilité, formation).
+Il rejoint l’équipe par le lien d’invitation que le titulaire lui transmet : rien à saisir, un clic sur « Rejoindre l’équipe » suffit (connexion anonyme Supabase, sans e-mail ni mot de passe). Il consulte ensuite son planning publié semaine par semaine et dépose ses demandes (congé, indisponibilité, formation).
+
+Cette simplicité a une contrepartie : la session ouverte par le lien reste valable sur cet appareil tant qu’elle n’est pas effacée (données de site, navigation privée, nouvel appareil…), mais ne se récupère pas si elle l’est — chaque lien d’invitation ne s’accepte qu’une fois. Si un collaborateur perd son accès, le titulaire doit lui envoyer un nouveau lien depuis sa fiche.
 
 ## Règles du générateur
 
@@ -93,7 +97,8 @@ supabase/
 
 ## Hypothèses et limites
 
-- **première version : un seul compte** — la création de compte est désactivée (`enable_signup = false` dans `supabase/config.toml`) ; inviter un collaborateur crée bien le lien, mais personne ne peut encore s’y connecter tant que son compte n’est pas créé à la main avec `scripts/create-admin.mjs` ;
+- **une seule officine** — la fonction Edge refuse d’en créer une deuxième, quel que soit le compte qui la demande (voir `POST /pharmacy` dans `supabase/functions/api/index.ts`) ;
+- **un compte e-mail + mot de passe par officine** — la première personne à créer son espace devient titulaire ; d’autres comptes e-mail + mot de passe peuvent encore se créer ensuite (Supabase Auth reste ouvert), mais aucun ne peut plus revendiquer d’officine. Les collaborateurs n’ont qu’une session anonyme, ouverte en acceptant un lien d’invitation — perdue, elle ne se récupère pas (voir « Collaborateur » plus haut) ;
 - une semaine va du lundi au dimanche ; les jours fermés ne sont pas planifiés ;
 - un profil appartient à une seule officine ;
 - pas de notifications externes, de pointage, de paie ni d’intégration RH ;

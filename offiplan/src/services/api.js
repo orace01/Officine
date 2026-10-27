@@ -10,6 +10,7 @@ const FUNCTIONS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api`;
 // dans le formulaire de connexion pour rester cohérent avec le reste de l'interface.
 const AUTH_MESSAGES = {
   'Invalid login credentials': 'Adresse courriel ou mot de passe incorrect.',
+  'User already registered': 'Un compte existe déjà avec cette adresse courriel.',
   'Email not confirmed': 'Cette adresse courriel n’a pas encore été confirmée.',
 };
 
@@ -48,6 +49,21 @@ export const api = {
   },
   login: async ({ email, password }) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw translateAuthError(error);
+  },
+  // Réservé à la toute première personne : tant qu'aucune officine n'existe (voir bootstrapStatus),
+  // l'écran d'accueil propose de créer ce compte-là, qui deviendra le titulaire. Ensuite la fonction
+  // Edge refuse toute deuxième officine (POST /pharmacy) : la porte se referme d'elle-même.
+  signup: async ({ name, email, password }) => {
+    const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { name } } });
+    if (error) throw translateAuthError(error);
+    return { needsConfirmation: !data.session };
+  },
+  bootstrapStatus: () => get('/bootstrap'),
+  // Rejoindre une équipe par lien d'invitation ne demande ni e-mail ni mot de passe : une session
+  // anonyme suffit, le jeton de l'invitation fait office de preuve (voir JoinView.jsx).
+  joinAnonymously: async () => {
+    const { error } = await supabase.auth.signInAnonymously();
     if (error) throw translateAuthError(error);
   },
   logout: () => supabase.auth.signOut(),
